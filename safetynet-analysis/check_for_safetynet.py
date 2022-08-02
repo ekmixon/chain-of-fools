@@ -54,7 +54,7 @@ def check_for_properties_file(apk_data, parsed_apk, s3_key: str):
                 properties_details = properties_file_string.split("\n")
 
                 safetynet_version = properties_details[0].split("=")[1]
-            logging.info("{} uses safetynet".format(app_name))
+            logging.info(f"{app_name} uses safetynet")
             apk_detail = ApkDetail(app_name=app_name, app_version=app_version,
                                    s3_key=s3_key,
                                    has_properties_file=True,
@@ -63,8 +63,10 @@ def check_for_properties_file(apk_data, parsed_apk, s3_key: str):
             apk_detail = ApkDetail(app_name=app_name, app_version=app_version,
                                    s3_key=s3_key, has_properties_file=False,
                                    safetynet_version=None)
-            logging.info("{} does not have a properties file detailing "
-                         "the use of safetynet".format(app_name))
+            logging.info(
+                f"{app_name} does not have a properties file detailing the use of safetynet"
+            )
+
 
     return apk_detail
 
@@ -86,18 +88,20 @@ def check_manifest_file(parsed_apk, apk_detail):
     safetynet_attestation_api_key = 'com.google.android.safetynet.ATTEST_API_KEY'
 
     for element in parsed_apk.xml['AndroidManifest.xml'].iter():
-        if metadata_key in element.attrib:
-            if re.match(safetynet_attestation_api_key,
-                        element.attrib[metadata_key]):
-                apk_detail.attestation_in_manifest = True
-                logging.info("Found the presence of safetynet "
-                             "in the AndroidManifest.xml for {}".format(
-                             apk_detail.app_name))
-                break
+        if metadata_key in element.attrib and re.match(
+            safetynet_attestation_api_key, element.attrib[metadata_key]
+        ):
+            apk_detail.attestation_in_manifest = True
+            logging.info(
+                f"Found the presence of safetynet in the AndroidManifest.xml for {apk_detail.app_name}"
+            )
+
+            break
     if not apk_detail.attestation_in_manifest:
-        logging.info("{}'s Manifest file does not "
-                     "have any details concerning safetynet".format(
-            apk_detail.app_name))
+        logging.info(
+            f"{apk_detail.app_name}'s Manifest file does not have any details concerning safetynet"
+        )
+
 
     return apk_detail
 
@@ -148,12 +152,13 @@ def check_apk(key: str, bucket_name: str):
         logging.error(e)
         return
 
-    logging.info("Checking {}".format(apk_name))
+    logging.info(f"Checking {apk_name}")
     session = scoped_session(session_factory)
 
     apk_bytes = apk_object['Body'].read()
-    apk_detail = session.query(ApkDetail).get(key)
-    if not apk_detail:
+    if apk_detail := session.query(ApkDetail).get(key):
+        logging.warning(f"{apk_name} has already been checked")
+    else:
         try:
             parsed_apk = APK(apk_bytes, raw=True)
             # a, d, dx = AnalyzeAPK(apk_bytes, raw=True)
@@ -170,9 +175,7 @@ def check_apk(key: str, bucket_name: str):
                            attestation_in_manifest=apk_detail.attestation_in_manifest,
                            dex_file=apk_detail.dex_file)
         except Exception as e:
-            logging.error("There was an error processing the file:" + str(e))
-    else:
-        logging.warning("{} has already been checked".format(apk_name))
+            logging.error(f"There was an error processing the file:{str(e)}")
 
 
 def check_for_safetynet_s3(config: dict):

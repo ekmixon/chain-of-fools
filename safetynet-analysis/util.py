@@ -39,11 +39,12 @@ def create_s3_client(config: dict):
     aws_session_token = config['aws']['aws_session_token']
 
     session = boto3.session.Session()
-    s3_client = session.client('s3',
-                               aws_access_key_id=aws_access_key_id,
-                               aws_secret_access_key=aws_secret_access_key,
-                               aws_session_token=aws_session_token)
-    return s3_client
+    return session.client(
+        's3',
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        aws_session_token=aws_session_token,
+    )
 
 
 def get_all_s3_keys(config: dict):
@@ -63,13 +64,11 @@ def get_all_s3_keys(config: dict):
     s3_client = create_s3_client(config)
     while True:
         resp = s3_client.list_objects_v2(**kwargs)
-        for obj in resp['Contents']:
-            keys.append(obj['Key'])
-
+        keys.extend(obj['Key'] for obj in resp['Contents'])
         try:
             kwargs['ContinuationToken'] = resp['NextContinuationToken']
         except KeyError:
             break
 
-    logging.info("There are {} keys in the bucket.".format(len(keys)))
+    logging.info(f"There are {len(keys)} keys in the bucket.")
     return set(keys)

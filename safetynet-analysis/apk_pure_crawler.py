@@ -61,7 +61,7 @@ class ApkPureCrawler(object, ):
     @staticmethod
     def parse_redirect_page(scrape_src, database_session, app_id):
         session = requests.Session()
-        logging.debug('Requesting2: ' + scrape_src)
+        logging.debug(f'Requesting2: {scrape_src}')
         resp = session.get(scrape_src)
         html = unicodedata.normalize('NFKD', resp.text).encode('ascii', 'ignore')
 
@@ -92,10 +92,10 @@ class ApkPureCrawler(object, ):
 
         filenames = []
 
-        url = 'https://apkpure.com/apkpure/' + apkid
+        url = f'https://apkpure.com/apkpure/{apkid}'
 
         session = requests.Session()
-        logging.debug('Requesting1: ' + url)
+        logging.debug(f'Requesting1: {url}')
         resp = session.get(url)
         html = unicodedata.normalize('NFKD', resp.text).encode('ascii', 'ignore')
 
@@ -107,8 +107,7 @@ class ApkPureCrawler(object, ):
                 if atag is None:
                     raise IndexError
                 apk_name = f'{apkid}-{self.crawler_name}.apk'
-                href = atag.get('href')
-                if href:
+                if href := atag.get('href'):
                     scrape_src = url + href
                     download_src = self.parse_redirect_page(scrape_src,
                                                             database_session,

@@ -76,7 +76,7 @@ def parse_list(base_url):
         writer.writeheader()
 
         for category in CATEGORIES:
-            for i in range(0, 25):
+            for i in range(25):
                 logging.info(f'Processing the {category} category page {i +1}')
                 page = i * 20 + 1
                 request_url = base_url.format(category=category,
@@ -95,12 +95,17 @@ def parse_list(base_url):
                     app_strings = dom.find_all("a", href=re.compile(app_regex))
                     for link in app_strings:
                         match = re.match('/application/.*/(.*)', link['href'])
-                        logging.info(f'Processing: {match.group(1)}')
+                        logging.info(f'Processing: {match[1]}')
                         if match:
-                            writer.writerow({'app_id': match.group(1),
-                                             'name': link.text,
-                                             'category': category,
-                                             'page': {i+1}})
+                            writer.writerow(
+                                {
+                                    'app_id': match[1],
+                                    'name': link.text,
+                                    'category': category,
+                                    'page': {i + 1},
+                                }
+                            )
+
                 else:
                     logging.error(f'There was an error processing: {request_url}')
                     exit(1)

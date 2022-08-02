@@ -52,8 +52,7 @@ def _fix_base64_padding(data: bytes) -> bytes:
     """Extend the base64 padding until it's correct. This is needed for some
     forms of URL-safe base64 which do not include padding.
     """
-    missing_padding = len(data) % 4
-    if missing_padding:
+    if missing_padding := len(data) % 4:
         data += b'=' * (4 - missing_padding)
     return data
 

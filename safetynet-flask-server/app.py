@@ -49,16 +49,22 @@ def validate_safetynet():
         # Split up the certs into leaf cert and intermediate certs
         leaf = crypto.load_certificate(
             crypto.FILETYPE_ASN1, b64decode(cert_chain[0]))
-        app.logger.debug("leaf issuer: {}".format(leaf.get_issuer()))
-        app.logger.debug("leaf subject: {}".format(leaf.get_subject()))
+        app.logger.debug(f"leaf issuer: {leaf.get_issuer()}")
+        app.logger.debug(f"leaf subject: {leaf.get_subject()}")
         intermediates = [crypto.load_certificate(crypto.FILETYPE_ASN1,
                                                 b64decode(intermediate))
                         for intermediate in cert_chain[1:]]
-        app.logger.debug("intermediate subject: {}".format([i.get_subject() for i in intermediates]))
-        app.logger.debug("intermediate issuer: {}".format([i.get_issuer() for i in intermediates]))
-        
+        app.logger.debug(
+            f"intermediate subject: {[i.get_subject() for i in intermediates]}"
+        )
+
+        app.logger.debug(
+            f"intermediate issuer: {[i.get_issuer() for i in intermediates]}"
+        )
+
+
         app.logger.info("parsed certificate chain")
-        
+
         bad_store = crypto.X509Store()
         # add the GlobalSign root
         bad_store.add_cert(crypto.load_certificate(crypto.FILETYPE_PEM, GSR_ROOT))
@@ -85,15 +91,16 @@ def validate_safetynet():
         try:
             leaf.get_pubkey().to_cryptography_key().verify(
                 signature,
-                bytes(b64_header + '.' + b64_payload, 'utf-8'),
+                bytes(f'{b64_header}.{b64_payload}', 'utf-8'),
                 padding.PKCS1v15(),
-                hashes.SHA256()
+                hashes.SHA256(),
             )
+
             app.logger.info("== SIGNATURE IS VALID ==")
             # parse payload
             payload_info = json.loads(payload.decode("utf-8"))
-            print("basicIntegrity: {}".format(payload_info['basicIntegrity']))
-            print("ctsProfileMatch: {}".format(payload_info['ctsProfileMatch']))
+            print(f"basicIntegrity: {payload_info['basicIntegrity']}")
+            print(f"ctsProfileMatch: {payload_info['ctsProfileMatch']}")
             return "Alright!", 200
         except:
             app.logger.info("== SIGNATURE FAILED VALIDATION ==")

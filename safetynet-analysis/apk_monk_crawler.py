@@ -34,7 +34,7 @@ class ApkMonkCrawler(object):
         link = ''
 
         session = HTMLSession()
-        logging.debug('Requesting2: ' + url)
+        logging.debug(f'Requesting2: {url}')
         resp = session.get(url)
         resp.html.render()
 
@@ -104,7 +104,7 @@ class ApkMonkCrawler(object):
         url = f'http://apkmonk.com/app/{apkid}'
 
         session = HTMLSession()
-        logging.debug('Requesting: ' + url)
+        logging.debug(f'Requesting: {url}')
         resp = session.get(url)
         html = unicodedata.normalize('NFKD', resp.text).encode('ascii', 'ignore')
 
@@ -117,8 +117,7 @@ class ApkMonkCrawler(object):
                     raise IndexError
 
                 apk_name = f'{apkid}-{self.crawler_name}.apk'
-                href = atag.get('href')
-                if href:
+                if href := atag.get('href'):
                     scrape_src = href
                     download_src = self.get_url_from_redirect(scrape_src)
 
@@ -145,6 +144,5 @@ class ApkMonkCrawler(object):
         """
 
         for apk in self.apk_ids:
-            filenames = self.check_one_app(apk)
-            if filenames:
+            if filenames := self.check_one_app(apk):
                 time.sleep(5)
